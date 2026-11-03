@@ -13,6 +13,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up MSYS2 UCRT64
+        id: msys2
         uses: msys2/setup-msys2@v2
         with:
           msystem: UCRT64
@@ -40,7 +41,7 @@ jobs:
 
       - name: Build band11 QEMU
         shell: powershell
-        run: .\build.cmd -Toolchain C:\msys64 -Model band11 -Jobs 4
+        run: .\build.cmd -Toolchain "${{ steps.msys2.outputs.msys2-root }}" -Model band11 -Jobs 4
 
       - name: Inspect build output
         if: always()
@@ -66,7 +67,7 @@ jobs:
         shell: powershell
         run: |
           $wheel = (Get-ChildItem "$env:RUNNER_TEMP\inputs\*.whl" | Select-Object -First 1).FullName
-          python -B tools\assemble_runtime.py --toolchain C:\msys64 --model band11 `
+          python -B tools\assemble_runtime.py --toolchain "${{ steps.msys2.outputs.msys2-root }}" --model band11 `
             --build-root .build `
             --python-embed "$env:RUNNER_TEMP\python-embed.zip" `
             --littlefs-wheel $wheel `
