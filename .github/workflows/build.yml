@@ -42,12 +42,25 @@ jobs:
         shell: powershell
         run: .\build.cmd -Toolchain C:\msys64 -Model band11 -Jobs 4
 
-      - name: Download runtime inputs
+      - name: Inspect build output
+        if: always()
         shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip" -OutFile "$env:RUNNER_TEMP\python-embed.zip"
-          python -m pip download --only-binary=:all: --no-deps --platform win_amd64 --python-version 311 --implementation cp --abi cp311 littlefs-python==0.19.0 -d "$env:RUNNER_TEMP\inputs"
-          Get-ChildItem "$env:RUNNER_TEMP\inputs"
+          "CWD: $PWD"
+          if (Test-Path .build) {
+            Get-ChildItem .build -Recurse -Depth 3 | Select-Object -First 40 | ForEach-Object { $_.FullName }
+          } else { ".build MISSING" }
+          Get-ChildItem -Recurse -Filter "qemu-system-arm.exe" -ErrorAction SilentlyContinue | ForEach-Object { "FOUND: " + $_.FullName }
+          "Test-Path check: " + (Test-Path .build/band11/build/qemu-system-arm.exe)
+
+      - name: Upload qemu exe (fallback)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: band11-qemu-exe
+          path: .build/band11/build/qemu-system-arm.exe
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Assemble runtime directory
         shell: powershell
@@ -60,15 +73,9 @@ jobs:
             --output dist\miband11-runtime
 
       - name: Upload runtime artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: miband11-runtime
           path: dist/miband11-runtime
-          retention-days: 14
-
-      - name: Upload qemu exe (fallback)
-        uses: actions/upload-artifact@v4
-        with:
-          name: band11-qemu-exe
-          path: .build/band11/build/qemu-system-arm.exe
           retention-days: 14
