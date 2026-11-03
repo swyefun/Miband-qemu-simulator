@@ -40,7 +40,7 @@ jobs:
 
       - name: Build band11 QEMU
         shell: powershell
-        run: .\build.cmd -Toolchain C:\msys64 -BuildRoot "$env:GITHUB_WORKSPACE\.build" -Model band11 -Jobs 4
+        run: .\build.cmd -Toolchain C:\msys64 -Model band11 -Jobs 4
 
       - name: Download runtime inputs
         shell: pwsh
@@ -54,10 +54,10 @@ jobs:
         run: |
           $wheel = (Get-ChildItem "$env:RUNNER_TEMP\inputs\*.whl" | Select-Object -First 1).FullName
           python -B tools\assemble_runtime.py --toolchain C:\msys64 --model band11 `
-            --build-root "$env:GITHUB_WORKSPACE\.build" `
+            --build-root .build `
             --python-embed "$env:RUNNER_TEMP\python-embed.zip" `
             --littlefs-wheel $wheel `
-            --output "$env:GITHUB_WORKSPACE\dist\miband11-runtime"
+            --output dist\miband11-runtime
 
       - name: Upload runtime artifact
         uses: actions/upload-artifact@v4
